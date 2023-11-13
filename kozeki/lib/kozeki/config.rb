@@ -51,8 +51,12 @@ module Kozeki
       @options.fetch(:metadata_decorators, [])
     end
 
+    def after_build_callbacks
+      @options.fetch(:after_build_callbacks, [])
+    end
+
     def state_path
-      cache_directory ? File.join(cache_directory, 'state.sqlite3') : ':memory:'
+      cache_directory ? File.join(File.expand_path(cache_directory, base_directory), 'state.sqlite3') : ':memory:'
     end
 
     def source_filesystem

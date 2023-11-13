@@ -47,5 +47,9 @@ module Kozeki
     def destination_filesystem(x)
       @options[:destination_filesystem] = x
     end
+
+    def on_after_build(&block)
+      (@options[:after_build_callbacks] ||= []).push(block)
+    end
   end
 end

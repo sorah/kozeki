@@ -105,7 +105,7 @@ module Kozeki
           if event.time
             begin
               record = @state.find_record_by_path!(event.path)
-              next if event.time <= record.mtime
+              next if event.time.to_f.floor(3) <= record.mtime.to_f.floor(3)
             rescue State::NotFound
             end
           end

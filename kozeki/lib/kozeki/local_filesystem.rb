@@ -51,8 +51,33 @@ module Kozeki
       end
     end
 
-    def flush
-      # do nothing
+    def watch(&block)
+      require 'listen'
+      base = File.expand_path(@base)
+      l = Listen.to(@base) do |modified, added, removed|
+        yield [
+          *(modified + added).map do |path|
+            Filesystem::Event.new(
+              op: :update,
+              path: convert_absolute_to_path(base, path),
+              time: nil,
+            )
+          end,
+          *removed.map do |path|
+            Filesystem::Event.new(
+              op: :delete,
+              path: convert_absolute_to_path(base, path),
+              time: nil,
+            )
+          end,
+        ]
+      end
+      l.start
+      -> { l.stop }
+    end
+
+    private def convert_absolute_to_path(base, path)
+      Pathname.new(path).relative_path_from(base).to_s.split(File::SEPARATOR)
     end
   end
 end

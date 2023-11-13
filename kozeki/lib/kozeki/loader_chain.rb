@@ -5,7 +5,7 @@ module Kozeki
       @decorators = decorators
     end
 
-    def self.try_read(...)
+    def try_read(...)
       @loaders.each do |loader|
         source = loader.try_read(...)
         next unless source

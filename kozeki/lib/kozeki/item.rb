@@ -24,10 +24,6 @@ module Kozeki
 
     attr_reader :id, :data, :meta, :build
 
-    def id
-      meta.fetch(:id)
-    end
-
     def as_json
       {
         kind: 'item',

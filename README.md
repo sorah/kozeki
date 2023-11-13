@@ -17,6 +17,7 @@ gem 'kozeki'
 
 ```ruby
 source_directory './articles'
+destination_directory './build'
 cache_directory './cache'
 
 metadata_decorator do |meta|
@@ -109,7 +110,7 @@ Example output:
 ## Usage
 
 ```
-bundle exec kozeki run ./config.rb ./out
+bundle exec kozeki build ./config.rb
 ```
 
 ### Known metadata keys

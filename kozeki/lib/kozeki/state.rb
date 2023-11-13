@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'sqlite3'
+require 'fileutils'
 
 require 'kozeki/record'
 
@@ -11,8 +12,9 @@ module Kozeki
     class NotFound < StandardError; end
     class DuplicatedItemIdError < StandardError; end
 
-    def self.open(...)
-      state = new(...)
+    def self.open(path:)
+      FileUtils.mkdir_p File.dirname(path) if path
+      state = new(path:)
       state.ensure_schema!
       state
     end
@@ -210,6 +212,10 @@ module Kozeki
 
     def transaction(...)
       db.transaction(...)
+    end
+
+    def close
+      db.close
     end
 
     # Ensure schema for the present version of Kozeki. As a state behaves like a cache, all tables will be removed
