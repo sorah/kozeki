@@ -130,6 +130,10 @@ module Kozeki
       @logger&.debug "=== Delete items for removed sources ==="
       removed_records = @state.list_records_by_pending_build_action(:remove)
       removed_records.each do |record|
+        if @state.list_records_by_id(record.id).any? { _1.pending_build_action == :update }
+          @logger&.warn "Skip deletion: #{record.id.inspect} (#{record.path.inspect})"
+          next
+        end
         @logger&.info "Delete: #{record.id.inspect} (#{record.path.inspect})"
         @destination_filesystem.delete(['items', "#{record.id}.json"])
         @state.set_record_collections_pending(record.id, [])
