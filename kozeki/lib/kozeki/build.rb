@@ -27,6 +27,7 @@ module Kozeki
     end
 
     attr_accessor :events, :incremental_build
+    attr_reader :updated_files
 
     def incremental_build_possible?
       @state.build_exist?

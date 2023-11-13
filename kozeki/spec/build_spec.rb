@@ -62,6 +62,7 @@ RSpec.describe Kozeki::Build do
 
   def assert_dst_files(paths)
     expect(destination_filesystem.list.map { _1.join(File::SEPARATOR) }.sort).to eq(paths.sort)
+    expect(paths.sort).to eq(build.updated_files.map { _1.join(File::SEPARATOR)}.sort)
   end
 
   describe "full build" do
