@@ -9,12 +9,13 @@ module Kozeki
   class Build
 
     # @param state [State]
-    def initialize(state:, source_filesystem:, destination_filesystem:, collection_list_included_prefix: nil, loader:, events: nil, incremental_build:, logger: nil)
+    def initialize(state:, source_filesystem:, destination_filesystem:, collection_list_included_prefix: nil, collection_options: [], loader:, events: nil, incremental_build:, logger: nil)
       @state = state
 
       @source_filesystem = source_filesystem
       @destination_filesystem = destination_filesystem
       @collection_list_included_prefix = collection_list_included_prefix
+      @collection_options = collection_options
       @loader = loader
       @loader_cache = {}
       @logger = logger
@@ -28,6 +29,10 @@ module Kozeki
 
     attr_accessor :events, :incremental_build
     attr_reader :updated_files
+
+    def inspect
+      "#<#{self.class.name}#{self.__id__}>"
+    end
 
     def incremental_build_possible?
       @state.build_exist?
@@ -193,7 +198,9 @@ module Kozeki
         end
       end
 
-      collection_list = CollectionList.new(@state.list_collection_names_with_prefix(*@collection_list_included_prefix))
+      @logger&.info "Render: CollectionList"
+      collection_names = @state.list_collection_names_with_prefix(*@collection_list_included_prefix)
+      collection_list = CollectionList.new(collection_names)
       @destination_filesystem.write(collection_list.item_path, "#{JSON.generate(collection_list.as_json)}\n")
       @updated_files << collection_list.item_path
     end
@@ -223,7 +230,19 @@ module Kozeki
     end
 
     private def make_collection(name, records)
-      Collection.new(name, records)
+      Collection.new(name, records, options: collection_option_for(name))
+    end
+
+    private def collection_option_for(collection_name)
+      retval = nil
+      len = -1
+      @collection_options.each do |x|
+        if collection_name.start_with?(x.prefix) && x.prefix.size > len
+          retval = x
+          len = x.prefix.size
+        end
+      end
+      retval
     end
   end
 end

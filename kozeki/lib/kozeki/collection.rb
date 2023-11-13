@@ -3,13 +3,14 @@ require 'time'
 
 module Kozeki
   class Collection
-    def initialize(name, records)
+    def initialize(name, records, options: nil)
       raise ArgumentError, "name cannot include /" if name.include?('/')
       @name = name
       @records = records
+      @options = options
     end
 
-    attr_reader :name, :records
+    attr_reader :name, :records, :options
 
     def as_json
       {
@@ -22,7 +23,9 @@ module Kozeki
             meta: record.meta,
           }
         end.sort_by do |json|
-          json.dig(:meta, :timestamp)&.then { Time.xmlschema(_1).to_i } || -1
+          json.dig(:meta, :timestamp)&.then { -Time.xmlschema(_1).to_i } || 0
+        end.then do |page|
+          options&.max_items ? page[0, options.max_items] : page
         end,
       }
     end

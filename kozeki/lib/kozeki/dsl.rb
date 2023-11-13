@@ -40,6 +40,12 @@ module Kozeki
       (@options[:collection_list_included_prefix] ||= []).concat prefixes.flatten.map(&:to_s)
     end
 
+    def collection_options(prefix:, **options)
+      @options[:collection_options] ||= []
+      # FIXME: recursive dependency :<
+      @options[:collection_options].push(Config::CollectionOptions.new(prefix:, **options))
+    end
+
     def metadata_decorator(&block)
       (@options[:metadata_decorators] ||= []).push(block)
     end

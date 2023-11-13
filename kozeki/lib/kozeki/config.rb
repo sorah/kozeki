@@ -7,6 +7,8 @@ require 'logger'
 
 module Kozeki
   class Config
+    CollectionOptions = Struct.new(:prefix, :max_items)
+
     def initialize(options)
       @options = options
       @source_filesystem = nil
@@ -49,6 +51,10 @@ module Kozeki
 
     def collection_list_included_prefix
       @options.fetch(:collection_list_included_prefix, nil)
+    end
+
+    def collection_options
+      @options.fetch(:collection_options, [])
     end
 
     def metadata_decorators

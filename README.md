@@ -6,16 +6,31 @@
 4. Emit index JSON files for listing articles in various ways
 5. Use JSON files to run your website, e.g. with Nextjs
 
+## Concept
+
+- All files in source_directory are imported as _source_
+- All sources will be compiled into _item._ Each item represents itself in destination_directory as a single JSON file.
+- An item may belong to _collections._
+  - Using a _collection_ is only way to generate a list of _items._ You may use a collection just only for a single _item._, such like to implement a index of permalink-to-item.
+- Each _collections_ generate JSON files (multiple if paginated) in destination_directory to provide list of _items._
+
 ## Installation
+
+Requires Ruby 3.2+
 
 ```ruby
 # Gemfile
 gem 'kozeki'
 ```
 
+```
+bundle install
+```
+
 ## Configuration
 
 ```ruby
+# config.rb
 source_directory './articles'
 destination_directory './build'
 cache_directory './cache'
@@ -86,7 +101,6 @@ Example output:
     "html": "<h2>foo bar</h2><p>blah blah</p>"
   },
   "kozeki_build": {
-    "built_at": ""
   }
 }
 ```
