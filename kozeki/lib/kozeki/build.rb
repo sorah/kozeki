@@ -3,6 +3,7 @@ require 'json'
 require 'kozeki/state'
 require 'kozeki/item'
 require 'kozeki/collection'
+require 'kozeki/collection_list'
 
 module Kozeki
   class Build
@@ -173,6 +174,7 @@ module Kozeki
     private def process_collections
       @logger&.debug "=== Render updated collections ==="
       collections = @state.list_collection_names_pending
+      return if collections.empty?
       collections.each do |collection|
         records = @state.list_collection_records(collection)
         if records.empty?
@@ -185,6 +187,10 @@ module Kozeki
           @updated_files << collection.item_path
         end
       end
+
+      collection_list = CollectionList.new(@state.list_collection_names)
+      @destination_filesystem.write(collection_list.item_path, "#{JSON.generate(collection_list.as_json)}\n")
+      @updated_files << collection_list.item_path
     end
 
     private def process_commit

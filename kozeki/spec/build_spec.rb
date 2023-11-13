@@ -83,6 +83,7 @@ RSpec.describe Kozeki::Build do
         items/1.json
         items/2.json
         collections/a.json
+        collections.json
       ))
       expect(read_json(File.join(tmpdir, 'dst', 'items', '1.json'))).to eq({
         kind: 'item',
@@ -161,6 +162,7 @@ RSpec.describe Kozeki::Build do
         items/1.json
         items/2.json
         collections/a.json
+        collections.json
       ))
       expect(read_json(File.join(tmpdir, 'dst', 'items', '1.json'))).to eq({
         kind: 'item',
@@ -266,6 +268,7 @@ RSpec.describe Kozeki::Build do
         items/1.json
         collections/a.json
         collections/b.json
+        collections.json
       ))
       expect(read_json(File.join(tmpdir, 'dst', 'items', '1.json'))).to eq({
         kind: 'item',
@@ -332,7 +335,7 @@ RSpec.describe Kozeki::Build do
 
     it "builds" do
       subject
-      assert_dst_files(%w())
+      assert_dst_files(%w(collections.json))
       expect { state.find_record!('1') }.to raise_error(Kozeki::State::NotFound)
       expect(state.list_collection_names).to eq([])
     end
@@ -357,7 +360,7 @@ RSpec.describe Kozeki::Build do
 
     it "builds" do
       subject
-      assert_dst_files(%w(items/1.json collections/a.json))
+      assert_dst_files(%w(items/1.json collections/a.json collections.json))
       expect(read_json(File.join(tmpdir, 'dst', 'items', '1.json'))).to eq({
         kind: 'item',
         id: '1',
@@ -409,7 +412,7 @@ RSpec.describe Kozeki::Build do
 
     it "builds" do
       subject
-      assert_dst_files(%w())
+      assert_dst_files(%w(collections.json))
       expect { state.find_record!('1') }.to raise_error(Kozeki::State::NotFound)
       expect(state.list_collection_names).to eq([])
     end
@@ -436,6 +439,7 @@ RSpec.describe Kozeki::Build do
       assert_dst_files(%w(
         items/1x.json
         collections/a.json
+        collections.json
       ))
       expect(read_json(File.join(tmpdir, 'dst', 'items', '1x.json'))).to eq({
         kind: 'item',
@@ -504,6 +508,7 @@ RSpec.describe Kozeki::Build do
         assert_dst_files(%w(
           items/2.json
           collections/a.json
+          collections.json
         ))
         expect(read_json(File.join(tmpdir, 'dst', 'items', '2.json'))).to eq({
           kind: 'item',
@@ -563,6 +568,7 @@ RSpec.describe Kozeki::Build do
       assert_dst_files(%w(
         items/1.json
         collections/a.json
+        collections.json
       ))
       expect(read_json(File.join(tmpdir, 'dst', 'items', '1.json'))).to eq({
         kind: 'item',
@@ -615,6 +621,7 @@ RSpec.describe Kozeki::Build do
       assert_dst_files(%w(
         items/1.json
         collections/a.json
+        collections.json
       ))
       expect(read_json(File.join(tmpdir, 'dst', 'items', '1.json'))).to eq({
         kind: 'item',
