@@ -219,6 +219,16 @@ module Kozeki
       SQL
     end
 
+    def count_collection_records(collection)
+      @db.execute(<<~SQL, [collection])[0].fetch('cnt')
+        select
+          count(*) cnt
+        from "collection_memberships"
+        where
+          "collection_memberships"."collection" = ?
+      SQL
+    end
+
     def transaction(...)
       db.transaction(...)
     end

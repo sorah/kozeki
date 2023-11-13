@@ -185,16 +185,20 @@ module Kozeki
       @logger&.debug "=== Render updated collections ==="
       collections = @state.list_collection_names_pending
       return if collections.empty?
-      collections.each do |collection|
-        records = @state.list_collection_records(collection)
-        if records.empty?
-          @logger&.info "Delete: Collection #{collection.inspect}"
-          @destination_filesystem.delete(['collections', "#{collection}.json"])
-        else
-          @logger&.info "Render: Collection #{collection.inspect}"
-          collection = make_collection(collection, records)
-          @destination_filesystem.write(collection.item_path, "#{JSON.generate(collection.as_json)}\n")
-          @updated_files << collection.item_path
+
+      collections.each do |collection_name|
+        records = @state.list_collection_records(collection_name)
+        record_count_was = @state.count_collection_records(collection_name)
+
+        collection = make_collection(collection_name, records)
+        collection.pages.each do |page|
+          @logger&.info "Render: Collection #{collection_name.inspect} (#{page.item_path.inspect})"
+          @destination_filesystem.write(page.item_path, "#{JSON.generate(page.as_json)}\n")
+          @updated_files << page.item_path
+        end
+        collection.item_paths_for_missing_pages(record_count_was).each do |path|
+          @logger&.info "Delete: Collection #{collection.inspect} (#{path.inspect})"
+          @destination_filesystem.delete(path)
         end
       end
 
