@@ -7,7 +7,7 @@ require 'logger'
 
 module Kozeki
   class Config
-    CollectionOptions = Struct.new(:prefix, :max_items)
+    CollectionOptions = Struct.new(:prefix, :max_items, :meta_keys)
 
     def initialize(options)
       @options = options
