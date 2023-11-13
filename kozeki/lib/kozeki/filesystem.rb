@@ -1,6 +1,8 @@
 module Kozeki
   module Filesystem
     Entry = Data.define(:path, :mtime)
+    Event = Data.define(:op, :path, :time)
+
     class NotFound < StandardError; end
 
     def read(path)
@@ -24,6 +26,10 @@ module Kozeki
     end
 
     def list_entries
+      raise NotImplementedError
+    end
+
+    def watch
       raise NotImplementedError
     end
 

@@ -3,6 +3,7 @@ require 'tmpdir'
 require 'json'
 
 require 'kozeki/build'
+require 'kozeki/filesystem'
 require 'kozeki/local_filesystem'
 require 'kozeki/state'
 require 'kozeki/markdown_loader'
@@ -253,7 +254,7 @@ RSpec.describe Kozeki::Build do
 
     let(:events) do
       [
-        Kozeki::Build::Event.new(op: :update, path: ['1.md'], time: nil),
+        Kozeki::Filesystem::Event.new(op: :update, path: ['1.md'], time: nil),
       ]
     end
 
@@ -319,7 +320,7 @@ RSpec.describe Kozeki::Build do
 
     let(:events) do
       [
-        Kozeki::Build::Event.new(op: :delete, path: ['1.md'], time: nil),
+        Kozeki::Filesystem::Event.new(op: :delete, path: ['1.md'], time: nil),
       ]
     end
 
@@ -423,7 +424,7 @@ RSpec.describe Kozeki::Build do
     let(:incremental_build) { true }
     let(:events) do
       [
-        Kozeki::Build::Event.new(op: :update, path: ['1.md'], time: nil),
+        Kozeki::Filesystem::Event.new(op: :update, path: ['1.md'], time: nil),
       ]
     end
 
@@ -476,7 +477,7 @@ RSpec.describe Kozeki::Build do
     let(:incremental_build) { true }
     let(:events) do
       [
-        Kozeki::Build::Event.new(op: :update, path: ['1.md'], time: nil),
+        Kozeki::Filesystem::Event.new(op: :update, path: ['1.md'], time: nil),
       ]
     end
 
@@ -496,7 +497,7 @@ RSpec.describe Kozeki::Build do
     describe "recovery" do
       let(:events) do
         [
-          Kozeki::Build::Event.new(op: :delete, path: ['2.md'], time: nil),
+          Kozeki::Filesystem::Event.new(op: :delete, path: ['2.md'], time: nil),
         ]
       end
 
@@ -551,8 +552,8 @@ RSpec.describe Kozeki::Build do
     let(:incremental_build) { true }
     let(:events) do
       [
-        Kozeki::Build::Event.new(op: :update, path: ['1x.md'], time: nil),
-        Kozeki::Build::Event.new(op: :delete, path: ['1.md'], time: nil),
+        Kozeki::Filesystem::Event.new(op: :update, path: ['1x.md'], time: nil),
+        Kozeki::Filesystem::Event.new(op: :delete, path: ['1.md'], time: nil),
       ]
     end
 
@@ -604,8 +605,8 @@ RSpec.describe Kozeki::Build do
     let(:incremental_build) { true }
     let(:events) do
       [
-        Kozeki::Build::Event.new(op: :delete, path: ['1.md'], time: nil),
-        Kozeki::Build::Event.new(op: :update, path: ['1x.md'], time: nil),
+        Kozeki::Filesystem::Event.new(op: :delete, path: ['1.md'], time: nil),
+        Kozeki::Filesystem::Event.new(op: :update, path: ['1x.md'], time: nil),
       ]
     end
 

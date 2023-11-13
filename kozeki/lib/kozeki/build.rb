@@ -7,7 +7,6 @@ require 'kozeki/collection_list'
 
 module Kozeki
   class Build
-    Event = Data.define(:op, :path, :time)
 
     # @param state [State]
     def initialize(state:, source_filesystem:, destination_filesystem:, loader:, events: nil, incremental_build:, logger: nil)
@@ -80,7 +79,7 @@ module Kozeki
       events = if full_build? || @events.nil?
         fs_list = @source_filesystem.list_entries()
         fs_list.map do |entry|
-          Event.new(op: :update, path: entry.path, time: full_build? ? nil : entry.mtime.floor(4))
+          Filesystem::Event.new(op: :update, path: entry.path, time: full_build? ? nil : entry.mtime.floor(4))
         end
       else
         @events.dup
@@ -95,7 +94,7 @@ module Kozeki
         @state.list_record_paths.reject do |path|
           seen_paths[path]
         end.each do |path|
-          events.push(Event.new(op: :delete, path:, time: nil))
+          events.push(Filesystem::Event.new(op: :delete, path:, time: nil))
         end
       end
 
