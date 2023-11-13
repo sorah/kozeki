@@ -78,7 +78,7 @@ module Kozeki
       events = if full_build? || @events.nil?
         fs_list = @source_filesystem.list_entries()
         fs_list.map do |entry|
-          Event.new(op: :update, path: entry.path, time: full_build? ? nil : entry.mtime)
+          Event.new(op: :update, path: entry.path, time: full_build? ? nil : entry.mtime.floor(4))
         end
       else
         @events.dup
@@ -104,7 +104,7 @@ module Kozeki
           if event.time
             begin
               record = @state.find_record_by_path!(event.path)
-              next if event.time.to_i <= record.mtime.to_i
+              next if event.time <= record.mtime
             rescue State::NotFound
             end
           end

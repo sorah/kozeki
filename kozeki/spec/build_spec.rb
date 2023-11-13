@@ -43,7 +43,7 @@ RSpec.describe Kozeki::Build do
     ].join("\n")}\n"
   end
 
-  def make_record(id, mtime: 0, meta: {})
+  def make_record(id, mtime: Time.at(0), meta: {})
     Kozeki::Record.new(
       path: ["#{id}.md"],
       id:,
@@ -66,6 +66,84 @@ RSpec.describe Kozeki::Build do
 
   describe "full build" do
     let(:incremental_build) { false }
+    let(:events) { nil }
+
+    let(:now) { Time.now.floor(0) }
+
+    before do
+      Dir.mkdir(File.join(tmpdir, 'src', 'a'))
+      File.write(File.join(tmpdir, 'src', 'a', '1.md'), make_markdown({id: '1', title: '1', collections: %w(a), timestamp: now.xmlschema}, "1"))
+      File.write(File.join(tmpdir, 'src', '2.md'), make_markdown({id: '2', title: '2'}, "2"))
+      File.utime(now, now, File.join(tmpdir, 'src', 'a', '1.md'))
+    end
+
+    it "builds" do
+      subject
+      assert_dst_files(%w(
+        items/1.json
+        items/2.json
+        collections/a.json
+      ))
+      expect(read_json(File.join(tmpdir, 'dst', 'items', '1.json'))).to eq({
+        kind: 'item',
+        id: '1',
+        meta: {
+          id: '1',
+          title: '1',
+          collections: %w(a),
+          timestamp: now.xmlschema,
+        },
+        data: {html: "<p>1</p>\n"},
+        kozeki_build: {},
+      })
+
+      expect(read_json(File.join(tmpdir, 'dst', 'items', '2.json'))).to eq({
+        kind: 'item',
+        id: '2',
+        meta: {
+          id: '2',
+          title: '2',
+        },
+        data: {html: "<p>2</p>\n"},
+        kozeki_build: {},
+      })
+
+      expect(read_json(File.join(tmpdir, 'dst', 'collections', 'a.json'))).to eq({
+        kind: 'collection',
+        name: 'a',
+        items: [
+          {
+            id: '1',
+            path: 'items/1.json',
+            meta: {
+              id: '1',
+              title: '1',
+              collections: %w(a),
+              timestamp: now.xmlschema,
+            },
+          },
+        ],
+      })
+
+      expect(state.find_record!('1')&.to_h&.slice(:id, :mtime, :path, :pending_build_action, :timestamp)).to eq({
+        id: '1',
+        mtime: File.mtime(File.join(tmpdir, 'src', 'a', '1.md')),
+        path: %w(a 1.md),
+        pending_build_action: nil,
+        timestamp: Time.at(now.to_i),
+      })
+      expect(state.find_record!('2')&.to_h&.slice(:id, :path, :pending_build_action)).to eq({
+        id: '2',
+        path: %w(2.md),
+        pending_build_action: nil,
+      })
+      expect(state.list_collection_names).to eq(%w(a))
+      expect(state.list_collection_records('a').map(&:path)).to eq([%w(a 1.md)])
+    end
+  end
+
+  describe "full build (as a incremental)" do
+    let(:incremental_build) { true }
     let(:events) { nil }
 
     let(:now) { Time.now.floor(0) }
@@ -267,8 +345,8 @@ RSpec.describe Kozeki::Build do
 
     before do
       File.write(File.join(tmpdir, 'src', '1.md'), make_markdown({id: '1', collections: %w(a)}, "1"))
-      File.write(File.join(tmpdir, 'src', '2.md'), make_markdown({id: '2'}, "2"))
-      File.utime(t+60, t, File.join(tmpdir, 'src', '1.md'))
+      File.write(File.join(tmpdir, 'src', '2.md'), make_markdown({id: '2', meta: 2}, "2"))
+      File.utime(t+60, t+60, File.join(tmpdir, 'src', '1.md'))
       File.utime(t, t, File.join(tmpdir, 'src', '2.md'))
       state.save_record(make_record('1', meta: {collections: %w(a)}, mtime: t.to_i))
       state.set_record_collections_pending('1', %w(a))
@@ -279,9 +357,34 @@ RSpec.describe Kozeki::Build do
 
     it "builds" do
       subject
-      assert_dst_files(%w())
-      expect(state.find_record!('1').mtime.floor).to eq(t)
+      assert_dst_files(%w(items/1.json collections/a.json))
+      expect(read_json(File.join(tmpdir, 'dst', 'items', '1.json'))).to eq({
+        kind: 'item',
+        id: '1',
+        meta: {
+          id: '1',
+          collections: %w(a),
+        },
+        data: {html: "<p>1</p>\n"},
+        kozeki_build: {},
+      })
+      expect(read_json(File.join(tmpdir, 'dst', 'collections', 'a.json'))).to eq({
+        kind: 'collection',
+        name: 'a',
+        items: [
+          {
+            id: '1',
+            path: 'items/1.json',
+            meta: {
+              id: '1',
+              collections: %w(a),
+            },
+          },
+        ],
+      })
+      expect(state.find_record!('1').mtime.floor).to eq(t+60)
       expect(state.find_record!('2').mtime.floor).to eq(t)
+      expect(state.find_record!('2').meta[:meta]).to eq(nil)
     end
   end
 
@@ -290,12 +393,16 @@ RSpec.describe Kozeki::Build do
     let(:events) { nil }
 
     before do
-      t = Time.now - 600
+      t = Time.now.round - 600
+      Dir.mkdir(File.join(tmpdir, 'dst', 'items'))
+      Dir.mkdir(File.join(tmpdir, 'dst', 'collections'))
       File.write(File.join(tmpdir, 'src', '2.md'), make_markdown({id: '2'}, "2"))
       File.utime(t, t, File.join(tmpdir, 'src', '2.md'))
-      state.save_record(make_record('1', meta: {collections: %w(a)}, mtime: t.to_i))
+      File.write(File.join(tmpdir, 'dst', 'items', '1.json'), "{}\n")
+      File.write(File.join(tmpdir, 'dst', 'collections', 'a.json'), "{}\n")
+      state.save_record(make_record('1', meta: {collections: %w(a)}, mtime: t))
       state.set_record_collections_pending('1', %w(a))
-      state.save_record(make_record('2', mtime: t.to_i))
+      state.save_record(make_record('2', mtime: t))
       state.process_markers!
       state.mark_build_completed(state.create_build)
     end
