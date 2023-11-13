@@ -18,6 +18,7 @@ module Kozeki
           state: state,
           source_filesystem: @config.source_filesystem,
           destination_filesystem: @config.destination_filesystem,
+          collection_list_included_prefix: @config.collection_list_included_prefix,
           loader: @config.loader,
           incremental_build:,
           events:,

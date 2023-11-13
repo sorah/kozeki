@@ -9,11 +9,12 @@ module Kozeki
   class Build
 
     # @param state [State]
-    def initialize(state:, source_filesystem:, destination_filesystem:, loader:, events: nil, incremental_build:, logger: nil)
+    def initialize(state:, source_filesystem:, destination_filesystem:, collection_list_included_prefix: nil, loader:, events: nil, incremental_build:, logger: nil)
       @state = state
 
       @source_filesystem = source_filesystem
       @destination_filesystem = destination_filesystem
+      @collection_list_included_prefix = collection_list_included_prefix
       @loader = loader
       @loader_cache = {}
       @logger = logger
@@ -192,7 +193,7 @@ module Kozeki
         end
       end
 
-      collection_list = CollectionList.new(@state.list_collection_names)
+      collection_list = CollectionList.new(@state.list_collection_names_with_prefix(*@collection_list_included_prefix))
       @destination_filesystem.write(collection_list.item_path, "#{JSON.generate(collection_list.as_json)}\n")
       @updated_files << collection_list.item_path
     end

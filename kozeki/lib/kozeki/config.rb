@@ -47,6 +47,10 @@ module Kozeki
       @options.fetch(:cache_directory, nil)
     end
 
+    def collection_list_included_prefix
+      @options.fetch(:collection_list_included_prefix, nil)
+    end
+
     def metadata_decorators
       @options.fetch(:metadata_decorators, [])
     end

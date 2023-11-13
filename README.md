@@ -20,6 +20,8 @@ source_directory './articles'
 destination_directory './build'
 cache_directory './cache'
 
+collection_list_included_prefix('archive:', 'category:')
+
 metadata_decorator do |meta|
   next unless meta[:published_at]
   meta[:timestamp] = Time.iso8601(meta[:published_at])
@@ -40,8 +42,11 @@ metadata_decorator do |meta, source|
   meta[:updated_at] = File.mtime(source.path)
 end
 
+require 'base64'
 metadata_decorator do |meta|
-  meta[:permalink] = "/#{meta.fetch(:timestamp).strftime('%Y/%m/%d')}/#{meta.fetch(:slug)}"
+  meta[:permalink] = "#{meta.fetch(:timestamp).strftime('%Y/%m/%d')}/#{meta.fetch(:slug)}"
+  meta[:collections] ||= []
+  meta[:collections].push "permalink:#{Base64.urlsafe_encode64(meta[:permalink])}"
 end
 ```
 

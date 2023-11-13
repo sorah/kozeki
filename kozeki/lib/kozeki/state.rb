@@ -197,6 +197,15 @@ module Kozeki
       end
     end
 
+    def list_collection_names_with_prefix(*prefixes)
+      return list_collection_names() if prefixes.empty?
+      conditions = prefixes.map { %{"collection" glob '#{SQLite3::Database.quote(_1)}*'} }
+      @db.execute(%{select distinct "collection" from "collection_memberships" where (#{conditions.join('or')})}).map do |row|
+        row.fetch('collection')
+      end
+    end
+
+
     def list_collection_records(collection)
       @db.execute(<<~SQL, [collection]).map { Record.from_row(_1) }
         select

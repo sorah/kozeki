@@ -36,6 +36,10 @@ module Kozeki
       @options[:cache_directory] = path
     end
 
+    def collection_list_included_prefix(*prefixes)
+      (@options[:collection_list_included_prefix] ||= []).concat prefixes.flatten.map(&:to_s)
+    end
+
     def metadata_decorator(&block)
       (@options[:metadata_decorators] ||= []).push(block)
     end
