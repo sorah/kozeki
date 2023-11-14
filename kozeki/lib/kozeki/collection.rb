@@ -8,6 +8,8 @@ module Kozeki
       @name = name
       @records = records
       @options = options
+
+      @records_sorted = nil
     end
 
     attr_reader :name, :records, :options
@@ -27,11 +29,11 @@ module Kozeki
       def records
         case @page
         when nil
-          @parent.records
+          @parent.records_sorted
         when 0
           raise "[bug] page is 1-origin"
         else
-          @parent.records[(@page - 1) * options.max_items, options.max_items]
+          @parent.records_sorted[(@page - 1) * options.max_items, options.max_items]
         end
       end
 
@@ -39,9 +41,7 @@ module Kozeki
         {
           kind: 'collection',
           name: name,
-          items: records.sort_by do |record|
-            record.timestamp&.then { -_1.to_i } || 0
-          end.map do |record|
+          items: records.map do |record|
             {
               id: record.id,
               path: ['items', "#{record.id}.json"].join('/'),
@@ -77,6 +77,12 @@ module Kozeki
           end
         end
         i
+      end
+    end
+
+    def records_sorted
+      @records_sorted ||= @records.sort_by do |record|
+        record.timestamp&.then { -_1.to_i } || 0
       end
     end
 

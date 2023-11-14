@@ -1,8 +1,10 @@
 require 'spec_helper'
 require 'tmpdir'
+require 'fileutils'
 require 'json'
 
 require 'kozeki/build'
+require 'kozeki/config'
 require 'kozeki/filesystem'
 require 'kozeki/local_filesystem'
 require 'kozeki/state'
@@ -21,12 +23,15 @@ RSpec.describe Kozeki::Build do
   let(:source_filesystem) { Kozeki::LocalFilesystem.new(File.join(tmpdir, 'src')) }
   let(:destination_filesystem) { Kozeki::LocalFilesystem.new(File.join(tmpdir, 'dst')) }
 
+  let(:collection_options) { [] }
+
   let(:build) do
     Kozeki::Build.new(
       state:,
       source_filesystem:,
       destination_filesystem:,
       loader: Kozeki::MarkdownLoader,
+      collection_options:,
       incremental_build:,
       events:,
     )
@@ -42,6 +47,15 @@ RSpec.describe Kozeki::Build do
       "",
       body,
     ].join("\n")}\n"
+  end
+
+
+  def make_rendered_header(matter, body)
+    {
+      id: matter.fetch(:id),
+      path: "items/#{matter.fetch(:id)}.json",
+      meta: matter,
+    }
   end
 
   def make_rendered_item(matter, body)
@@ -569,4 +583,146 @@ RSpec.describe Kozeki::Build do
     end
   end
 
+  describe "Collection" do
+    let(:incremental_build) { false }
+    let(:events) { nil }
+    let(:now) { Time.now.floor(0) }
+
+    before do
+      (1..10).each do |i|
+        File.write(File.join(tmpdir, 'src', "#{i}.md"), make_markdown({id: i.to_s,  collections: %w(a), timestamp: (now-i).xmlschema}, i.to_s))
+      end
+    end
+
+    describe "max_items" do
+      let(:collection_options) do
+        [
+          Kozeki::Config::CollectionOptions.new(
+            prefix: 'a',
+            max_items: 5,
+          ),
+        ]
+      end
+
+      it "builds" do
+        subject
+
+        expect(read_json(File.join(tmpdir, 'dst', 'collections', 'a.json'))).to eq({
+          kind: 'collection',
+          name: 'a',
+          items: (1..5).map do |i|
+            make_rendered_header({id: i.to_s,  collections: %w(a), timestamp: (now-i).xmlschema}, i.to_s)
+          end,
+        })
+      end
+    end
+
+    describe "paginate" do
+      let(:collection_options) do
+        [
+          Kozeki::Config::CollectionOptions.new(
+            prefix: 'a',
+            max_items: 3,
+            paginate: true,
+          ),
+        ]
+      end
+
+      it "builds" do
+        subject
+
+        make_info = ->(pagenum) do
+          j={
+            first: "collections/a.json",
+            last: "collections/a/page-4.json",
+            prev: pagenum > 1 ? "collections/a/page-#{pagenum-1}.json" : nil,
+            next: pagenum < 4 ? "collections/a/page-#{pagenum+1}.json" : nil,
+            self: pagenum,
+            total_pages: 4,
+          }
+          if pagenum == 1
+            j.merge!(pages: ["collections/a.json", "collections/a/page-2.json", "collections/a/page-3.json", "collections/a/page-4.json"])
+          end
+          if pagenum == 2
+            j.merge!(prev: "collections/a.json")
+          end
+          j
+        end
+
+        expect(read_json(File.join(tmpdir, 'dst', 'collections', 'a.json'))).to eq({
+          kind: 'collection',
+          name: 'a',
+          items: (1..3).map do |i|
+            make_rendered_header({id: i.to_s,  collections: %w(a), timestamp: (now-i).xmlschema}, i.to_s)
+          end,
+          page: make_info[1],
+        })
+        expect(read_json(File.join(tmpdir, 'dst', 'collections', 'a', 'page-2.json'))).to eq({
+          kind: 'collection',
+          name: 'a',
+          items: (4..6).map do |i|
+            make_rendered_header({id: i.to_s,  collections: %w(a), timestamp: (now-i).xmlschema}, i.to_s)
+          end,
+          page: make_info[2],
+        })
+        expect(read_json(File.join(tmpdir, 'dst', 'collections', 'a', 'page-3.json'))).to eq({
+          kind: 'collection',
+          name: 'a',
+          items: (7..9).map do |i|
+            make_rendered_header({id: i.to_s,  collections: %w(a), timestamp: (now-i).xmlschema}, i.to_s)
+          end,
+          page: make_info[3],
+        })
+        expect(read_json(File.join(tmpdir, 'dst', 'collections', 'a', 'page-4.json'))).to eq({
+          kind: 'collection',
+          name: 'a',
+          items: (10..10).map do |i|
+            make_rendered_header({id: i.to_s,  collections: %w(a), timestamp: (now-i).xmlschema}, i.to_s)
+          end,
+          page: make_info[4],
+        })
+      end
+    end
+
+    describe "paginate, when page removed" do
+      let(:collection_options) do
+        [
+          Kozeki::Config::CollectionOptions.new(
+            prefix: 'a',
+            max_items: 3,
+            paginate: true,
+          ),
+        ]
+      end
+
+      let(:incremental_build) { true }
+      let(:events) do
+        [
+          Kozeki::Filesystem::Event.new(op: :delete, path: ['10.md'], time: nil),
+        ]
+      end
+
+      before do
+        FileUtils.mkdir_p(File.join(tmpdir, 'dst', 'collections', 'a'))
+        File.write(File.join(tmpdir, 'dst', 'collections', 'a', 'page-4.json'), "{}\n")
+        (1..10).each do |i|
+          state.set_record_collections_pending(i.to_s, %w(a))
+          state.save_record(make_record(i.to_s))
+        end
+        state.process_markers!
+        state.mark_build_completed(state.create_build)
+      end
+
+      it "builds" do
+        subject
+        assert_dst_files(%w(
+          collections.json
+          collections/a.json
+          collections/a/page-2.json
+          collections/a/page-3.json
+        ))
+      end
+    end
+
+  end
 end
