@@ -44,6 +44,16 @@ RSpec.describe Kozeki::Build do
     ].join("\n")}\n"
   end
 
+  def make_rendered_item(matter, body)
+    {
+      kind: 'item',
+      id: matter.fetch(:id),
+      meta: matter,
+      data: {html: "<p>#{body}</p>\n"},
+      kozeki_build: {},
+    }
+  end
+
   def make_record(id, mtime: Time.at(0), meta: {})
     Kozeki::Record.new(
       path: ["#{id}.md"],
@@ -87,29 +97,8 @@ RSpec.describe Kozeki::Build do
         collections/a.json
         collections.json
       ))
-      expect(read_json(File.join(tmpdir, 'dst', 'items', '1.json'))).to eq({
-        kind: 'item',
-        id: '1',
-        meta: {
-          id: '1',
-          title: '1',
-          collections: %w(a),
-          timestamp: now.xmlschema,
-        },
-        data: {html: "<p>1</p>\n"},
-        kozeki_build: {},
-      })
-
-      expect(read_json(File.join(tmpdir, 'dst', 'items', '2.json'))).to eq({
-        kind: 'item',
-        id: '2',
-        meta: {
-          id: '2',
-          title: '2',
-        },
-        data: {html: "<p>2</p>\n"},
-        kozeki_build: {},
-      })
+      expect(read_json(File.join(tmpdir, 'dst', 'items', '1.json'))).to eq(make_rendered_item({id: '1', title: '1', collections: %w(a), timestamp: now.xmlschema}, "1"))
+      expect(read_json(File.join(tmpdir, 'dst', 'items', '2.json'))).to eq(make_rendered_item({id: '2', title: '2'}, "2"))
 
       expect(read_json(File.join(tmpdir, 'dst', 'collections', 'a.json'))).to eq({
         kind: 'collection',
@@ -155,6 +144,7 @@ RSpec.describe Kozeki::Build do
       Dir.mkdir(File.join(tmpdir, 'src', 'a'))
       File.write(File.join(tmpdir, 'src', 'a', '1.md'), make_markdown({id: '1', title: '1', collections: %w(a), timestamp: now.xmlschema}, "1"))
       File.write(File.join(tmpdir, 'src', '2.md'), make_markdown({id: '2', title: '2'}, "2"))
+      File.write(File.join(tmpdir, 'dst', 'mark'), "\n")
       File.utime(now, now, File.join(tmpdir, 'src', 'a', '1.md'))
     end
 
@@ -166,29 +156,8 @@ RSpec.describe Kozeki::Build do
         collections/a.json
         collections.json
       ))
-      expect(read_json(File.join(tmpdir, 'dst', 'items', '1.json'))).to eq({
-        kind: 'item',
-        id: '1',
-        meta: {
-          id: '1',
-          title: '1',
-          collections: %w(a),
-          timestamp: now.xmlschema,
-        },
-        data: {html: "<p>1</p>\n"},
-        kozeki_build: {},
-      })
-
-      expect(read_json(File.join(tmpdir, 'dst', 'items', '2.json'))).to eq({
-        kind: 'item',
-        id: '2',
-        meta: {
-          id: '2',
-          title: '2',
-        },
-        data: {html: "<p>2</p>\n"},
-        kozeki_build: {},
-      })
+      expect(read_json(File.join(tmpdir, 'dst', 'items', '1.json'))).to eq(make_rendered_item({id: '1', title: '1', collections: %w(a), timestamp: now.xmlschema}, "1"))
+      expect(read_json(File.join(tmpdir, 'dst', 'items', '2.json'))).to eq(make_rendered_item({id: '2', title: '2'}, "2"))
 
       expect(read_json(File.join(tmpdir, 'dst', 'collections', 'a.json'))).to eq({
         kind: 'collection',
@@ -272,16 +241,7 @@ RSpec.describe Kozeki::Build do
         collections/b.json
         collections.json
       ))
-      expect(read_json(File.join(tmpdir, 'dst', 'items', '1.json'))).to eq({
-        kind: 'item',
-        id: '1',
-        meta: {
-          id: '1',
-          collections: %w(a b),
-        },
-        data: {html: "<p>1</p>\n"},
-        kozeki_build: {},
-      })
+      expect(read_json(File.join(tmpdir, 'dst', 'items', '1.json'))).to eq(make_rendered_item({id: '1', collections: %w(a b)}, "1"))
       expect(read_json(File.join(tmpdir, 'dst', 'collections', 'a.json'))).to eq({
         kind: 'collection',
         name: 'a',
@@ -363,16 +323,7 @@ RSpec.describe Kozeki::Build do
     it "builds" do
       subject
       assert_dst_files(%w(items/1.json collections/a.json collections.json))
-      expect(read_json(File.join(tmpdir, 'dst', 'items', '1.json'))).to eq({
-        kind: 'item',
-        id: '1',
-        meta: {
-          id: '1',
-          collections: %w(a),
-        },
-        data: {html: "<p>1</p>\n"},
-        kozeki_build: {},
-      })
+      expect(read_json(File.join(tmpdir, 'dst', 'items', '1.json'))).to eq(make_rendered_item({id: '1', collections: %w(a)}, "1"))
       expect(read_json(File.join(tmpdir, 'dst', 'collections', 'a.json'))).to eq({
         kind: 'collection',
         name: 'a',
@@ -443,16 +394,7 @@ RSpec.describe Kozeki::Build do
         collections/a.json
         collections.json
       ))
-      expect(read_json(File.join(tmpdir, 'dst', 'items', '1x.json'))).to eq({
-        kind: 'item',
-        id: '1x',
-        meta: {
-          id: '1x',
-          collections: %w(a),
-        },
-        data: {html: "<p>1</p>\n"},
-        kozeki_build: {},
-      })
+      expect(read_json(File.join(tmpdir, 'dst', 'items', '1x.json'))).to eq(make_rendered_item({id: '1x', collections: %w(a)}, "1"))
       expect(read_json(File.join(tmpdir, 'dst', 'collections', 'a.json'))).to eq({
         kind: 'collection',
         name: 'a',
@@ -512,16 +454,7 @@ RSpec.describe Kozeki::Build do
           collections/a.json
           collections.json
         ))
-        expect(read_json(File.join(tmpdir, 'dst', 'items', '2.json'))).to eq({
-          kind: 'item',
-          id: '2',
-          meta: {
-            id: '2',
-            collections: %w(a),
-          },
-          data: {html: "<p>1</p>\n"},
-          kozeki_build: {},
-        })
+        expect(read_json(File.join(tmpdir, 'dst', 'items', '2.json'))).to eq(make_rendered_item({id: '2', collections: %w(a)}, "1"))
         expect(read_json(File.join(tmpdir, 'dst', 'collections', 'a.json'))).to eq({
           kind: 'collection',
           name: 'a',
@@ -572,16 +505,7 @@ RSpec.describe Kozeki::Build do
         collections/a.json
         collections.json
       ))
-      expect(read_json(File.join(tmpdir, 'dst', 'items', '1.json'))).to eq({
-        kind: 'item',
-        id: '1',
-        meta: {
-          id: '1',
-          collections: %w(a),
-        },
-        data: {html: "<p>1</p>\n"},
-        kozeki_build: {},
-      })
+      expect(read_json(File.join(tmpdir, 'dst', 'items', '1.json'))).to eq(make_rendered_item({id: '1', collections: %w(a)}, "1"))
       expect(read_json(File.join(tmpdir, 'dst', 'collections', 'a.json'))).to eq({
         kind: 'collection',
         name: 'a',
@@ -625,16 +549,7 @@ RSpec.describe Kozeki::Build do
         collections/a.json
         collections.json
       ))
-      expect(read_json(File.join(tmpdir, 'dst', 'items', '1.json'))).to eq({
-        kind: 'item',
-        id: '1',
-        meta: {
-          id: '1',
-          collections: %w(a),
-        },
-        data: {html: "<p>1</p>\n"},
-        kozeki_build: {},
-      })
+      expect(read_json(File.join(tmpdir, 'dst', 'items', '1.json'))).to eq(make_rendered_item({id: '1', collections: %w(a)}, "1"))
       expect(read_json(File.join(tmpdir, 'dst', 'collections', 'a.json'))).to eq({
         kind: 'collection',
         name: 'a',
