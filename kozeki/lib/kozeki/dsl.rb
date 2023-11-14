@@ -51,7 +51,7 @@ module Kozeki
     end
 
     def source_filesystem(x)
-      @options[:destination_filesystem] = x
+      @options[:source_filesystem] = x
     end
 
     def destination_filesystem(x)
