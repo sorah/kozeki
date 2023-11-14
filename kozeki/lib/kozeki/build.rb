@@ -105,13 +105,19 @@ module Kozeki
       end
 
       events.each do |event|
-        @logger&.debug "> #{event.inspect}" if incremental_build?
+        @logger&.debug "> #{event.inspect}" if incremental_build? && @events
         case event.op
         when :update
           if event.time
             begin
               record = @state.find_record_by_path!(event.path)
-              next if event.time.to_f.floor(3) <= record.mtime.to_f.floor(3)
+              diff = event.time.to_f.floor(3) - record.mtime.to_f.floor(3)
+              if diff > 0.005
+                @logger&.debug "> #{event.inspect}"
+                @logger&.debug "  #{record.mtime} (#{record.mtime.to_f.floor(3)}) < #{event.time} (#{event.time.to_f.floor(3)})"
+              else
+                next
+              end
             rescue State::NotFound
             end
           end
