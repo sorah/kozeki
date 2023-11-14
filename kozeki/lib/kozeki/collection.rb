@@ -14,6 +14,59 @@ module Kozeki
 
     attr_reader :name, :records, :options
 
+    def records_sorted
+      @records_sorted ||= @records.sort_by do |record|
+        record.timestamp&.then { -_1.to_i } || 0
+      end
+    end
+
+    def total_pages
+      @total_pages ||= calculate_total_pages(records.size)
+    end
+
+    def pages
+      case
+      when records.empty?
+        []
+      when options&.paginate && options&.max_items
+        total_pages.times.map do |i|
+          Page.new(parent: self, page: i+1)
+        end
+      else
+        [Page.new(parent: self, page: nil)]
+      end
+    end
+
+    def item_path_for_page(pagenum)
+      case pagenum
+      when 0
+        raise "[bug] page is 1-origin"
+      when nil, 1
+        ['collections', "#{name}.json"]
+      else
+        ['collections', "#{name}", "page-#{pagenum}.json"]
+      end
+    end
+
+    def item_paths_for_missing_pages(item_count_was)
+      total_pages_was = calculate_total_pages(item_count_was)
+      if (total_pages_was - total_pages) > 0
+        (total_pages+1..total_pages_was).map do |pagenum|
+          item_path_for_page(pagenum)
+        end
+      else
+        []
+      end
+    end
+
+    def calculate_total_pages(count)
+      if options&.paginate && options&.max_items
+        count.divmod(options.max_items).then {|(a,b)| a + (b>0 ? 1 : 0) }
+      else
+        count > 0 ? 1 : 0
+      end
+    end
+
     class Page
       def initialize(parent:, page:)
         @parent = parent
@@ -77,59 +130,6 @@ module Kozeki
           end
         end
         i
-      end
-    end
-
-    def records_sorted
-      @records_sorted ||= @records.sort_by do |record|
-        record.timestamp&.then { -_1.to_i } || 0
-      end
-    end
-
-    def total_pages
-      @total_pages ||= calculate_total_pages(records.size)
-    end
-
-    def pages
-      case
-      when records.empty?
-        []
-      when options&.paginate && options&.max_items
-        total_pages.times.map do |i|
-          Page.new(parent: self, page: i+1)
-        end
-      else
-        [Page.new(parent: self, page: nil)]
-      end
-    end
-
-    def item_path_for_page(pagenum)
-      case pagenum
-      when 0
-        raise "[bug] page is 1-origin"
-      when nil, 1
-        ['collections', "#{name}.json"]
-      else
-        ['collections', "#{name}", "page-#{pagenum}.json"]
-      end
-    end
-
-    def item_paths_for_missing_pages(item_count_was)
-      total_pages_was = calculate_total_pages(item_count_was)
-      if (total_pages_was - total_pages) > 0
-        (total_pages+1..total_pages_was).map do |pagenum|
-          item_path_for_page(pagenum)
-        end
-      else
-        []
-      end
-    end
-
-    def calculate_total_pages(count)
-      if options&.paginate && options&.max_items
-        count.divmod(options.max_items).then {|(a,b)| a + (b>0 ? 1 : 0) }
-      else
-        count > 0 ? 1 : 0
       end
     end
   end
