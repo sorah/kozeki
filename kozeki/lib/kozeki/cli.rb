@@ -1,8 +1,10 @@
 # frozen_string_literal: true
 require 'thor'
+require 'json'
 
 require 'kozeki/client'
 require 'kozeki/config'
+require 'kozeki/filesystem'
 
 module Kozeki
   class Cli < Thor
@@ -10,11 +12,12 @@ module Kozeki
 
     desc 'build CONFIG_FILE', 'run a one-off build using CONFIG_FILE'
     method_options :full => :boolean
+    method_options :events_from_stdin => :boolean
     def build(config_file)
       client = make_client(config_file)
       client.build(
         incremental_build: !options[:full],
-        events: nil,
+        events: options[:events_from_stdin] ? load_events_from_stdin() : nil,
       )
     end
 
@@ -37,6 +40,17 @@ module Kozeki
       private def make_client(config_file)
         config = Config.load_file(config_file)
         Client.new(config:)
+      end
+
+      private def load_events_from_stdin
+        j = JSON.parse($stdin.read, symbolize_names: true)
+        j.map do |x|
+          Filesystem::Event.new(
+            op: x.fetch(:op).to_sym,
+            path: x.fetch(:path),
+            time: nil,
+          )
+        end
       end
     end
   end
