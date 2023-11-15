@@ -25,6 +25,11 @@ RSpec.describe Kozeki::Build do
 
   let(:collection_options) { [] }
 
+  # To catch errors in like: logger&.xxx("do: #{maybe_error()}")
+  let(:null_logger) do
+    double('null_logger', debug: nil, warn: nil, error: nil, info: nil)
+  end
+
   let(:build) do
     Kozeki::Build.new(
       state:,
@@ -34,6 +39,7 @@ RSpec.describe Kozeki::Build do
       collection_options:,
       incremental_build:,
       events:,
+      logger: null_logger,
     )
   end
 

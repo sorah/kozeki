@@ -14,6 +14,10 @@ module Kozeki
 
     attr_reader :name, :records, :options
 
+    def inspect
+      "#<#{self.class.name}#{self.__id__} name=#{name.inspect} options=#{options.inspect}>"
+    end
+
     def records_sorted
       @records_sorted ||= @records.sort_by do |record|
         record.timestamp&.then { -_1.to_i } || 0
@@ -73,6 +77,10 @@ module Kozeki
         @page = page
 
         @total_pages = nil
+      end
+
+      def inspect
+        "#<#{self.class.name}#{self.__id__} page=#{@page.inspect} parent=#{@parent.inspect}>"
       end
 
       def name; @parent.name; end
