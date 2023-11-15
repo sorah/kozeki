@@ -46,6 +46,10 @@ module Kozeki
       @options[:collection_options].push(Config::CollectionOptions.new(prefix:, **options))
     end
 
+    def hide_collections_in_item(bool)
+      @options[:hide_collections_in_item] = bool
+    end
+
     def metadata_decorator(&block)
       (@options[:metadata_decorators] ||= []).push(block)
     end

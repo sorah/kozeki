@@ -20,6 +20,7 @@ module Kozeki
           destination_filesystem: @config.destination_filesystem,
           collection_list_included_prefix: @config.collection_list_included_prefix,
           collection_options: @config.collection_options,
+          hide_collections_in_item: @config.hide_collections_in_item,
           loader: @config.loader,
           incremental_build:,
           events:,

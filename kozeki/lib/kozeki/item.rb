@@ -24,7 +24,7 @@ module Kozeki
 
     attr_reader :id, :data, :meta, :build
 
-    def as_json
+    def as_json(hide_collections_in_item: false)
       {
         kind: 'item',
         id: id,
@@ -35,6 +35,8 @@ module Kozeki
           else
             v
           end
+        end.tap do |j|
+          j.delete(:collections) if hide_collections_in_item
         end,
         data:,
         kozeki_build: build,

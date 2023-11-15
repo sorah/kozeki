@@ -98,6 +98,12 @@ module Kozeki
         end
       end
 
+      private def meta_as_json(record)
+        retval = options&.meta_keys ? record.meta.slice(*options.meta_keys) : record.meta.dup
+        retval.delete(:collections) if options&.hide_collections
+        retval
+      end
+
       def as_json
         {
           kind: 'collection',
@@ -106,7 +112,7 @@ module Kozeki
             {
               id: record.id,
               path: ['items', "#{record.id}.json"].join('/'),
-              meta: options&.meta_keys ? record.meta.slice(*options.meta_keys) : record.meta,
+              meta: meta_as_json(record),
             }
           end.then do |page|
             options&.max_items ? page[0, options.max_items] : page

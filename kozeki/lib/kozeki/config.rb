@@ -7,7 +7,7 @@ require 'logger'
 
 module Kozeki
   class Config
-    CollectionOptions = Struct.new(:prefix, :max_items, :paginate, :meta_keys)
+    CollectionOptions = Struct.new(:prefix, :max_items, :paginate, :meta_keys, :hide_collections)
 
     def initialize(options)
       @options = options
@@ -55,6 +55,10 @@ module Kozeki
 
     def collection_options
       @options.fetch(:collection_options, [])
+    end
+
+    def hide_collections_in_item
+      @options.fetch(:hide_collections_in_item, false)
     end
 
     def metadata_decorators

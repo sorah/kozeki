@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 require 'json'
+require 'kozeki/config'
 require 'kozeki/state'
 require 'kozeki/item'
 require 'kozeki/collection'
@@ -9,13 +10,14 @@ module Kozeki
   class Build
 
     # @param state [State]
-    def initialize(state:, source_filesystem:, destination_filesystem:, collection_list_included_prefix: nil, collection_options: [], loader:, events: nil, incremental_build:, logger: nil)
+    def initialize(state:, source_filesystem:, destination_filesystem:, collection_list_included_prefix: nil, hide_collections_in_item: false, collection_options: [], loader:, events: nil, incremental_build:, logger: nil)
       @state = state
 
       @source_filesystem = source_filesystem
       @destination_filesystem = destination_filesystem
       @collection_list_included_prefix = collection_list_included_prefix
       @collection_options = collection_options
+      @hide_collections_in_item = hide_collections_in_item
       @loader = loader
       @loader_cache = {}
       @logger = logger
@@ -171,7 +173,10 @@ module Kozeki
         end
 
         item = build_item(source)
-        filesystem_write(source.item_path, "#{JSON.generate(item.as_json)}\n")
+        json = item.as_json(
+          hide_collections_in_item: @hide_collections_in_item,
+        )
+        filesystem_write(source.item_path, "#{JSON.generate(json)}\n")
         @state.set_record_collections_pending(item.id, item.meta.fetch(:collections, []))
       end
     end
@@ -254,6 +259,8 @@ module Kozeki
           len = x.prefix.size
         end
       end
+      retval = retval&.dup || Config::CollectionOptions.new
+      retval.hide_collections = true if @hide_collections_in_item && retval.hide_collections.nil?
       retval
     end
 

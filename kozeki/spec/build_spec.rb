@@ -24,6 +24,7 @@ RSpec.describe Kozeki::Build do
   let(:destination_filesystem) { Kozeki::LocalFilesystem.new(File.join(tmpdir, 'dst')) }
 
   let(:collection_options) { [] }
+  let(:hide_collections_in_item) { false }
 
   # To catch errors in like: logger&.xxx("do: #{maybe_error()}")
   let(:null_logger) do
@@ -37,6 +38,7 @@ RSpec.describe Kozeki::Build do
       destination_filesystem:,
       loader: Kozeki::MarkdownLoader,
       collection_options:,
+      hide_collections_in_item:,
       incremental_build:,
       events:,
       logger: null_logger,
@@ -729,6 +731,72 @@ RSpec.describe Kozeki::Build do
         ))
       end
     end
-
   end
+
+  describe "hide_collections_in_item" do
+    let(:incremental_build) { false }
+    let(:events) { nil }
+
+    let(:hide_collections_in_item) { true }
+
+    before do
+      (1..3).each do |i|
+        File.write(File.join(tmpdir, 'src', "#{i}.md"), make_markdown({id: i.to_s,  collections: %w(a)}, i.to_s))
+      end
+      (4..6).each do |i|
+        File.write(File.join(tmpdir, 'src', "#{i}.md"), make_markdown({id: i.to_s,  collections: %w(b)}, i.to_s))
+      end
+      (7..9).each do |i|
+        File.write(File.join(tmpdir, 'src', "#{i}.md"), make_markdown({id: i.to_s,  collections: %w(c)}, i.to_s))
+      end
+    end
+
+    it "builds and built items don't have collections" do
+      subject
+      (1..9).each do |x|
+        expect(read_json(File.join(tmpdir, 'dst', 'items', "#{x}.json"))).to eq(make_rendered_item({id: x.to_s}, x.to_s))
+      end
+    end
+
+    describe "collection inheritance" do
+      let(:collection_options) do
+        [
+          Kozeki::Config::CollectionOptions.new(
+            prefix: 'a',
+          ),
+          Kozeki::Config::CollectionOptions.new(
+            prefix: 'b',
+            hide_collections: false,
+          ),
+        ]
+      end
+
+      it "builds" do
+        subject
+
+        expect(read_json(File.join(tmpdir, 'dst', 'collections', 'a.json'))).to eq({
+          kind: 'collection',
+          name: 'a',
+          items: (1..3).map do |i|
+            make_rendered_header({id: i.to_s}, i.to_s)
+          end,
+        })
+        expect(read_json(File.join(tmpdir, 'dst', 'collections', 'b.json'))).to eq({
+          kind: 'collection',
+          name: 'b',
+          items: (4..6).map do |i|
+            make_rendered_header({id: i.to_s,  collections: %w(b)}, i.to_s)
+          end,
+        })
+        expect(read_json(File.join(tmpdir, 'dst', 'collections', 'c.json'))).to eq({
+          kind: 'collection',
+          name: 'c',
+          items: (7..9).map do |i|
+            make_rendered_header({id: i.to_s}, i.to_s)
+          end,
+        })
+      end
+    end
+  end
+
 end
