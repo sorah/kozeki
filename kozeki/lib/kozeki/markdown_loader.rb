@@ -25,24 +25,30 @@ module Kozeki
     end
 
     def self.build(source)
-      html = Commonmarker.to_html(source.content, options: {
-        render: {
-          unsafe: true,
+      html = Commonmarker.to_html(
+        source.content,
+        options: {
+          render: {
+            unsafe: true,
+          },
+          extension: {
+            strikethrough: true,
+            tagfilter: false,
+            table: true,
+            autolink: true,
+            tasklist: true,
+            superscript: true,
+            header_ids: "#{source.id}--",
+            footnotes: true,
+            description_lists: true,
+            front_matter_delimiter: '---',
+            shortcodes: true,
+          },
         },
-        extension: {
-          strikethrough: true,
-          tagfilter: false,
-          table: true,
-          autolink: true,
-          tasklist: true,
-          superscript: true,
-          header_ids: "#{source.id}--",
-          footnotes: true,
-          description_lists: true,
-          front_matter_delimiter: '---',
-          shortcodes: true,
+        plugins: {
+          syntax_highlighter: nil,
         },
-      })
+      )
 
       {
         html: html,

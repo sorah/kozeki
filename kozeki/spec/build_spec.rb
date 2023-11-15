@@ -137,6 +137,7 @@ RSpec.describe Kozeki::Build do
             },
           },
         ],
+        kozeki_build: {},
       })
 
       expect(state.find_record!('1')&.to_h&.slice(:id, :mtime, :path, :pending_build_action, :timestamp)).to eq({
@@ -196,6 +197,7 @@ RSpec.describe Kozeki::Build do
             },
           },
         ],
+        kozeki_build: {},
       })
 
       expect(state.find_record!('1')&.to_h&.slice(:id, :mtime, :path, :pending_build_action, :timestamp)).to eq({
@@ -277,6 +279,7 @@ RSpec.describe Kozeki::Build do
             },
           },
         ],
+        kozeki_build: {},
       })
       expect(read_json(File.join(tmpdir, 'dst', 'collections', 'b.json'))).to eq({
         kind: 'collection',
@@ -291,6 +294,7 @@ RSpec.describe Kozeki::Build do
             },
           },
         ],
+        kozeki_build: {},
       })
 
       expect(state.find_record!('1').mtime.floor).to eq(File.mtime(File.join(tmpdir, 'src', '1.md')).floor)
@@ -359,6 +363,7 @@ RSpec.describe Kozeki::Build do
             },
           },
         ],
+        kozeki_build: {},
       })
       expect(state.find_record!('1').mtime.floor).to eq(t+60)
       expect(state.find_record!('2').mtime.floor).to eq(t)
@@ -430,6 +435,7 @@ RSpec.describe Kozeki::Build do
             },
           },
         ],
+        kozeki_build: {},
       })
 
       expect { state.find_record!('1') }.to raise_error(Kozeki::State::NotFound)
@@ -490,6 +496,7 @@ RSpec.describe Kozeki::Build do
               },
             },
           ],
+          kozeki_build: {},
         })
 
         expect(state.find_record!('2')&.to_h&.slice(:id, :path, :pending_build_action)).to eq({
@@ -541,6 +548,7 @@ RSpec.describe Kozeki::Build do
             },
           },
         ],
+        kozeki_build: {},
       })
 
       expect(state.find_record!('1').path).to eq(%w(1x.md))
@@ -585,6 +593,7 @@ RSpec.describe Kozeki::Build do
             },
           },
         ],
+        kozeki_build: {},
       })
 
       expect(state.find_record!('1').path).to eq(%w(1x.md))
@@ -621,6 +630,7 @@ RSpec.describe Kozeki::Build do
           items: (1..5).map do |i|
             make_rendered_header({id: i.to_s,  collections: %w(a), timestamp: (now-i).xmlschema}, i.to_s)
           end,
+          kozeki_build: {},
         })
       end
     end
@@ -664,6 +674,7 @@ RSpec.describe Kozeki::Build do
             make_rendered_header({id: i.to_s,  collections: %w(a), timestamp: (now-i).xmlschema}, i.to_s)
           end,
           page: make_info[1],
+          kozeki_build: {},
         })
         expect(read_json(File.join(tmpdir, 'dst', 'collections', 'a', 'page-2.json'))).to eq({
           kind: 'collection',
@@ -672,6 +683,7 @@ RSpec.describe Kozeki::Build do
             make_rendered_header({id: i.to_s,  collections: %w(a), timestamp: (now-i).xmlschema}, i.to_s)
           end,
           page: make_info[2],
+          kozeki_build: {},
         })
         expect(read_json(File.join(tmpdir, 'dst', 'collections', 'a', 'page-3.json'))).to eq({
           kind: 'collection',
@@ -680,6 +692,7 @@ RSpec.describe Kozeki::Build do
             make_rendered_header({id: i.to_s,  collections: %w(a), timestamp: (now-i).xmlschema}, i.to_s)
           end,
           page: make_info[3],
+          kozeki_build: {},
         })
         expect(read_json(File.join(tmpdir, 'dst', 'collections', 'a', 'page-4.json'))).to eq({
           kind: 'collection',
@@ -688,6 +701,7 @@ RSpec.describe Kozeki::Build do
             make_rendered_header({id: i.to_s,  collections: %w(a), timestamp: (now-i).xmlschema}, i.to_s)
           end,
           page: make_info[4],
+          kozeki_build: {},
         })
       end
     end
@@ -780,6 +794,7 @@ RSpec.describe Kozeki::Build do
           items: (1..3).map do |i|
             make_rendered_header({id: i.to_s}, i.to_s)
           end,
+          kozeki_build: {},
         })
         expect(read_json(File.join(tmpdir, 'dst', 'collections', 'b.json'))).to eq({
           kind: 'collection',
@@ -787,6 +802,7 @@ RSpec.describe Kozeki::Build do
           items: (4..6).map do |i|
             make_rendered_header({id: i.to_s,  collections: %w(b)}, i.to_s)
           end,
+          kozeki_build: {},
         })
         expect(read_json(File.join(tmpdir, 'dst', 'collections', 'c.json'))).to eq({
           kind: 'collection',
@@ -794,6 +810,7 @@ RSpec.describe Kozeki::Build do
           items: (7..9).map do |i|
             make_rendered_header({id: i.to_s}, i.to_s)
           end,
+          kozeki_build: {},
         })
       end
     end

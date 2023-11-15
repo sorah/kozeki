@@ -39,7 +39,7 @@ module Kozeki
           j.delete(:collections) if hide_collections_in_item
         end,
         data:,
-        kozeki_build: build,
+        kozeki_build: build || {},
       }
     end
   end

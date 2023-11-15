@@ -81,6 +81,10 @@ module Kozeki
       @destination_filesystem ||= @options.fetch(:destination_filesystem) { LocalFilesystem.new(File.expand_path(destination_directory, base_directory)) }
     end
 
+    def build_info_generators
+      @options.fetch(:build_info_generators, [])
+    end
+
     def loader
       @loader ||= LoaderChain.new(
         loaders: [MarkdownLoader],

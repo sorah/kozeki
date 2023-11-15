@@ -14,6 +14,7 @@ module Kozeki
       @meta = meta
       @mtime = mtime
       @content = content
+      @build = nil
 
       @loader = loader
 
@@ -23,6 +24,7 @@ module Kozeki
 
     attr_reader :path, :mtime, :content, :loader
     attr_accessor :meta
+    attr_accessor :build
 
     def id
       meta.fetch(:id) do
@@ -53,7 +55,7 @@ module Kozeki
         id:,
         data:,
         meta:,
-        build: {},
+        build: @build || {},
       )
     end
   end

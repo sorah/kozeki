@@ -8,7 +8,7 @@ module Kozeki
 
     attr_reader :names
 
-    def as_json
+    def as_json(build: {})
       {
         kind: 'collection_list',
         collections: names.sort.map do |name|
@@ -17,6 +17,7 @@ module Kozeki
             path: ['collections', "#{name}.json"].join('/'),
           }
         end,
+        kozeki_build: build,
       }
     end
 

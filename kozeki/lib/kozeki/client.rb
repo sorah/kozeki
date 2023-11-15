@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 require 'kozeki/state'
 require 'kozeki/build'
+require 'kozeki/version'
 
 module Kozeki
   class Client
@@ -25,6 +26,7 @@ module Kozeki
           incremental_build:,
           events:,
           logger: @config.logger,
+          build_data: generate_build_data,
         )
         build.perform
       ensure
@@ -45,6 +47,16 @@ module Kozeki
       sleep
     ensure
       stop&.call
+    end
+
+    private def generate_build_data
+      data = {
+        version: Kozeki::VERSION.to_s,
+      }
+      @config.build_info_generators.each do |cb|
+        cb.call(data)
+      end
+      data
     end
   end
 end

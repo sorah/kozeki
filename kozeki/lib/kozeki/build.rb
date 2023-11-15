@@ -10,7 +10,7 @@ module Kozeki
   class Build
 
     # @param state [State]
-    def initialize(state:, source_filesystem:, destination_filesystem:, collection_list_included_prefix: nil, hide_collections_in_item: false, collection_options: [], loader:, events: nil, incremental_build:, logger: nil)
+    def initialize(state:, source_filesystem:, destination_filesystem:, collection_list_included_prefix: nil, hide_collections_in_item: false, collection_options: [], loader:, events: nil, incremental_build:, build_data: nil, logger: nil)
       @state = state
 
       @source_filesystem = source_filesystem
@@ -25,16 +25,22 @@ module Kozeki
       @events = events
       @incremental_build = incremental_build
 
+      @build_data = build_data
+
       @updated_files = []
       @deleted_files = []
       @build_id = nil
     end
 
     attr_accessor :events, :incremental_build
-    attr_reader :updated_files, :deleted_files
+    attr_reader :updated_files, :deleted_files, :build_data
 
     def inspect
       "#<#{self.class.name}#{self.__id__}>"
+    end
+
+    def build_data
+      @build_data || {}
     end
 
     def incremental_build_possible?
@@ -85,6 +91,7 @@ module Kozeki
       @state.clear! if full_build?
       @build_id = @state.create_build
       @logger&.debug "Build ID: #{@build_id.inspect}"
+      @build_data = {build: {id: @build_id.to_s, state: @state.finger}}.merge(@build_data) if @build_data
     end
 
     private def process_events
@@ -219,7 +226,7 @@ module Kozeki
       @logger&.info "Render: CollectionList"
       collection_names = @state.list_collection_names_with_prefix(*@collection_list_included_prefix)
       collection_list = CollectionList.new(collection_names)
-      filesystem_write(collection_list.item_path, "#{JSON.generate(collection_list.as_json)}\n")
+      filesystem_write(collection_list.item_path, "#{JSON.generate(collection_list.as_json(build: build_data))}\n")
     end
 
     private def process_commit
@@ -238,7 +245,9 @@ module Kozeki
     private def load_source(path)
       @loader_cache[path] ||= begin
         @logger&.debug("Load: #{path.inspect}")
-        @loader.try_read(path: path, filesystem: @source_filesystem) or raise "can't read #{path.inspect}"
+        val = @loader.try_read(path: path, filesystem: @source_filesystem) or raise "can't read #{path.inspect}"
+        val.build = build_data
+        val
       end
     end
 

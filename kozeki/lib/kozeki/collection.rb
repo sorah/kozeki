@@ -3,16 +3,17 @@ require 'time'
 
 module Kozeki
   class Collection
-    def initialize(name, records, options: nil)
+    def initialize(name, records, options: nil, build: nil)
       raise ArgumentError, "name cannot include /" if name.include?('/')
       @name = name
       @records = records
       @options = options
+      @build = build
 
       @records_sorted = nil
     end
 
-    attr_reader :name, :records, :options
+    attr_reader :name, :records, :options, :build
 
     def inspect
       "#<#{self.class.name}#{self.__id__} name=#{name.inspect} options=#{options.inspect}>"
@@ -86,6 +87,7 @@ module Kozeki
       def name; @parent.name; end
       def options; @parent.options; end
       def total_pages; @parent.total_pages; end
+      def build; @parent.build; end
 
       def records
         case @page
@@ -117,6 +119,7 @@ module Kozeki
           end.then do |page|
             options&.max_items ? page[0, options.max_items] : page
           end,
+          kozeki_build: build || {},
         }.tap do |j|
           j[:page] = page_info if @page
         end

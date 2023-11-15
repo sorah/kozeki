@@ -2,12 +2,13 @@
 
 require 'sqlite3'
 require 'fileutils'
+require 'securerandom'
 
 require 'kozeki/record'
 
 module Kozeki
   class State
-    EPOCH = 1
+    EPOCH = 2
 
     class NotFound < StandardError; end
     class DuplicatedItemIdError < StandardError; end
@@ -245,7 +246,8 @@ module Kozeki
       db.execute_batch <<~SQL
         drop table if exists "kozeki_schema_epoch";
         create table kozeki_schema_epoch (
-          "epoch" integer not null
+          "epoch" integer not null,
+          "finger" text not null
         ) strict;
       SQL
 
@@ -311,7 +313,7 @@ module Kozeki
       SQL
 
       db.execute(%{delete from "kozeki_schema_epoch"})
-      db.execute(%{insert into "kozeki_schema_epoch" values (?)}, [EPOCH])
+      db.execute(%{insert into "kozeki_schema_epoch" ("epoch", "finger") values (?,?)}, [EPOCH, SecureRandom.urlsafe_base64(12)])
 
       nil
     end
@@ -321,6 +323,11 @@ module Kozeki
       return nil if epoch_tables.empty?
       epoch = @db.execute(%{select "epoch" from "kozeki_schema_epoch" order by "epoch" desc limit 1})
       epoch&.dig(0, 'epoch')
+    end
+
+    def finger
+      epoch = @db.execute(%{select "finger" from "kozeki_schema_epoch" order by "epoch" desc limit 1})
+      epoch&.dig(0, 'finger')
     end
   end
 end

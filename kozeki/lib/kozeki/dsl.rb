@@ -51,6 +51,7 @@ module Kozeki
     end
 
     def metadata_decorator(&block)
+      raise ArgumentError, "block must be given" unless block
       (@options[:metadata_decorators] ||= []).push(block)
     end
 
@@ -60,6 +61,11 @@ module Kozeki
 
     def destination_filesystem(x)
       @options[:destination_filesystem] = x
+    end
+
+    def build_info(&block)
+      raise ArgumentError, "block must be given" unless block
+      (@options[:build_info_generators] ||= []).push(block)
     end
 
     def on_after_build(&block)
