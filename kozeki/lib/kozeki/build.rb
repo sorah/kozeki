@@ -24,11 +24,12 @@ module Kozeki
       @incremental_build = incremental_build
 
       @updated_files = []
+      @deleted_files = []
       @build_id = nil
     end
 
     attr_accessor :events, :incremental_build
-    attr_reader :updated_files
+    attr_reader :updated_files, :deleted_files
 
     def inspect
       "#<#{self.class.name}#{self.__id__}>"
@@ -151,7 +152,7 @@ module Kozeki
           next
         end
         @logger&.info "Delete: #{record.id.inspect} (#{record.path.inspect})"
-        @destination_filesystem.delete(['items', "#{record.id}.json"])
+        filesystem_delete(['items', "#{record.id}.json"])
         @state.set_record_collections_pending(record.id, [])
       end
     end
@@ -170,9 +171,8 @@ module Kozeki
         end
 
         item = build_item(source)
-        @destination_filesystem.write(source.item_path, "#{JSON.generate(item.as_json)}\n")
+        filesystem_write(source.item_path, "#{JSON.generate(item.as_json)}\n")
         @state.set_record_collections_pending(item.id, item.meta.fetch(:collections, []))
-        @updated_files << source.item_path
       end
     end
 
@@ -186,7 +186,7 @@ module Kozeki
           @logger&.info "Garbage: #{item_id.inspect}"
           @state.mark_item_id_to_remove(item_id)
           @state.set_record_collections_pending(item_id, [])
-          @destination_filesystem.delete(['items', "#{item_id}.json"])
+          filesystem_delete(['items', "#{item_id}.json"])
         end
       end
     end
@@ -203,20 +203,18 @@ module Kozeki
         collection = make_collection(collection_name, records)
         collection.pages.each do |page|
           @logger&.info "Render: Collection #{collection_name.inspect} (#{page.item_path.inspect})"
-          @destination_filesystem.write(page.item_path, "#{JSON.generate(page.as_json)}\n")
-          @updated_files << page.item_path
+          filesystem_write(page.item_path, "#{JSON.generate(page.as_json)}\n")
         end
         collection.item_paths_for_missing_pages(record_count_was).each do |path|
           @logger&.info "Delete: Collection #{collection.inspect} (#{path.inspect})"
-          @destination_filesystem.delete(path)
+          filesystem_delete(path)
         end
       end
 
       @logger&.info "Render: CollectionList"
       collection_names = @state.list_collection_names_with_prefix(*@collection_list_included_prefix)
       collection_list = CollectionList.new(collection_names)
-      @destination_filesystem.write(collection_list.item_path, "#{JSON.generate(collection_list.as_json)}\n")
-      @updated_files << collection_list.item_path
+      filesystem_write(collection_list.item_path, "#{JSON.generate(collection_list.as_json)}\n")
     end
 
     private def process_commit
@@ -257,6 +255,18 @@ module Kozeki
         end
       end
       retval
+    end
+
+    private def filesystem_write(path, body)
+      @destination_filesystem.write(path, body)
+      @updated_files << path
+      nil
+    end
+
+    private def filesystem_delete(path)
+      @destination_filesystem.delete(path)
+      @deleted_files << path
+      nil
     end
   end
 end
