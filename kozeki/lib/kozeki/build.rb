@@ -68,9 +68,11 @@ module Kozeki
       @state.transaction do
         process_collections
       end
+      @destination_filesystem.flush
       @state.transaction do
         process_commit
       end
+      @destination_filesystem.flush
     end
 
     private def process_prepare

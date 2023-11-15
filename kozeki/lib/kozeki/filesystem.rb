@@ -6,7 +6,7 @@ module Kozeki
     class NotFound < StandardError; end
 
     def read(path)
-      raise NotImplementedError
+      read_with_mtime(path)[0]
     end
 
     def read_with_mtime(path)
@@ -38,6 +38,9 @@ module Kozeki
       to_remove.each do |path|
         delete(path)
       end
+    end
+
+    def flush
     end
   end
 end

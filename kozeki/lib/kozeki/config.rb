@@ -70,11 +70,11 @@ module Kozeki
     end
 
     def source_filesystem
-      @source_filesystem ||= @options.fetch(:source_filesystem, LocalFilesystem.new(File.expand_path(source_directory, base_directory)))
+      @source_filesystem ||= @options.fetch(:source_filesystem) { LocalFilesystem.new(File.expand_path(source_directory, base_directory)) }
     end
 
     def destination_filesystem
-      @destination_filesystem ||= @options.fetch(:destination_filesystem, LocalFilesystem.new(File.expand_path(destination_directory, base_directory)))
+      @destination_filesystem ||= @options.fetch(:destination_filesystem) { LocalFilesystem.new(File.expand_path(destination_directory, base_directory)) }
     end
 
     def loader
