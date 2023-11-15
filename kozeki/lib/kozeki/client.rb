@@ -39,6 +39,7 @@ module Kozeki
       build(incremental_build: true, events: nil)
       stop = @config.source_filesystem.watch do |events|
         build(incremental_build: true, events: events)
+        $stdout.flush rescue nil
       end
       sleep
     ensure
