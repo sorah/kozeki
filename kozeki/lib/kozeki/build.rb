@@ -61,18 +61,20 @@ module Kozeki
       @state.transaction do
         process_items_remove
         process_items_update
+        @destination_filesystem.flush
       end
       @state.transaction do
         process_garbage
+        @destination_filesystem.flush
       end
       @state.transaction do
         process_collections
+        @destination_filesystem.flush
       end
-      @destination_filesystem.flush
       @state.transaction do
         process_commit
+        @destination_filesystem.flush
       end
-      @destination_filesystem.flush
     end
 
     private def process_prepare
