@@ -22,7 +22,8 @@ module Kozeki
       raise ArgumentError, "id cannot include /" if id.include?('/')
     end
 
-    attr_reader :path, :mtime, :content, :loader
+    attr_reader :path, :content, :loader
+    attr_accessor :mtime
     attr_accessor :meta
     attr_accessor :build
 

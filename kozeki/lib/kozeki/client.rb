@@ -22,6 +22,7 @@ module Kozeki
           collection_list_included_prefix: @config.collection_list_included_prefix,
           collection_options: @config.collection_options,
           hide_collections_in_item: @config.hide_collections_in_item,
+          use_event_time_as_mtime: @config.use_event_time_as_mtime,
           loader: @config.loader,
           incremental_build:,
           events:,

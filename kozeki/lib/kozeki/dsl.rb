@@ -63,6 +63,10 @@ module Kozeki
       @options[:destination_filesystem] = x
     end
 
+    def use_event_time_as_mtime(bool)
+      @options[:use_event_time_as_mtime] = bool
+    end
+
     def build_info(&block)
       raise ArgumentError, "block must be given" unless block
       (@options[:build_info_generators] ||= []).push(block)

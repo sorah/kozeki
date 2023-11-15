@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 require 'thor'
 require 'json'
+require 'time'
 
 require 'kozeki/client'
 require 'kozeki/config'
@@ -48,7 +49,7 @@ module Kozeki
           Filesystem::Event.new(
             op: x.fetch(:op).to_sym,
             path: x.fetch(:path),
-            time: nil,
+            time: x[:time]&.then { Time.xmlschema(_1) },
           )
         end
       end

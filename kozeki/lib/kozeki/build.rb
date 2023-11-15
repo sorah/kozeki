@@ -10,7 +10,7 @@ module Kozeki
   class Build
 
     # @param state [State]
-    def initialize(state:, source_filesystem:, destination_filesystem:, collection_list_included_prefix: nil, hide_collections_in_item: false, collection_options: [], loader:, events: nil, incremental_build:, build_data: nil, logger: nil)
+    def initialize(state:, source_filesystem:, destination_filesystem:, collection_list_included_prefix: nil, hide_collections_in_item: false, collection_options: [], use_event_time_as_mtime: false, loader:, events: nil, incremental_build:, build_data: nil, logger: nil)
       @state = state
 
       @source_filesystem = source_filesystem
@@ -18,6 +18,7 @@ module Kozeki
       @collection_list_included_prefix = collection_list_included_prefix
       @collection_options = collection_options
       @hide_collections_in_item = hide_collections_in_item
+      @use_event_time_as_mtime = use_event_time_as_mtime
       @loader = loader
       @loader_cache = {}
       @logger = logger
@@ -136,7 +137,7 @@ module Kozeki
             end
           end
 
-          source = load_source(event.path)
+          source = load_source(event.path, mtime: event.time)
           record = @state.save_record(source.to_record)
           @state.set_record_pending_build_action(record, :update)
           @logger&.info "ID change: #{event.path.inspect}; #{record.id_was.inspect} => #{record.id.inspect}" if record.id_was
@@ -242,11 +243,12 @@ module Kozeki
       # TODO: @state.remove_old_builds
     end
 
-    private def load_source(path)
+    private def load_source(path, mtime: nil)
       @loader_cache[path] ||= begin
         @logger&.debug("Load: #{path.inspect}")
         val = @loader.try_read(path: path, filesystem: @source_filesystem) or raise "can't read #{path.inspect}"
         val.build = build_data
+        val.mtime = mtime if mtime && @use_event_time_as_mtime
         val
       end
     end
