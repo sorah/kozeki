@@ -36,7 +36,7 @@ module Kozeki
         @s3.put_object(
           bucket:,
           key:,
-          body: StringIO.new(string, 'r'),
+          body: StringIO.new(string, 'r'), # avoid body to be logged
           content_type: content_type_for(path),
           cache_control: @cache_control[key],
         )
