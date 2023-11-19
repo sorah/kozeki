@@ -2,7 +2,9 @@
 
 Actual usage in https://diary.sorah.jp/ and https://blog.sorah.jp/
 
-```
+## Config
+
+```ruby
 require 'base64'
 require 'logger'
 require 'kozeki/aws'
@@ -96,4 +98,65 @@ end
 build_info do |data|
   data[:ci] = "#{ENV['GITHUB_SERVER_URL']}/#{ENV['GITHUB_REPOSITORY']}/actions/runs/#{ENV['GITHUB_RUN_ID']}" if ENV['GITHUB_RUN_ID']
 end
+```
+
+## GitHub Actions
+
+Do incremental build with GitHub Actions:
+
+```yaml
+jobs:
+  xxx:
+    steps:
+      - name: 'Checkout SHA_BEFORE  ${{ github.event.before }}'
+        uses: actions/checkout@v3
+        with:
+          ref:  '${{ github.event.before }}'
+      - run: 'git fetch origin && git checkout --progress --force ${{ github.sha }}'
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ${{ github.workspace }}/cache
+          key: ${{ runner.os }}-${{ hashFiles('**/Gemfile.lock') }}-${{ hashFiles('**/config.rb') }}
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+      - run: 'ruby ./diff-events.rb | tee cache/events.json'
+        env:
+          SHA_BEFORE: '${{ github.event.before }}'
+          SHA_AFTER: '${{ github.sha }}'
+      - run: 'cat cache/events.json | bundle exec kozeki build --events-from-stdin config.rb'
+```
+
+```ruby
+#!/usr/bin/env ruby
+# diff-events.rb
+require 'time'
+require 'json'
+
+log = IO.popen(["git", "log", "--name-only", "--pretty=format:%cI", "-z", "#{ENV.fetch('SHA_BEFORE')}..#{ENV.fetch('SHA_AFTER', 'HEAD')}","entries"],'r',&:read)
+raise $?.inspect unless $?.success?
+
+changes = {}
+
+log.split(/\0\0/).each do |cmt|
+   tstr, filesz= cmt.split(/\n/,2)
+   files= filesz.split("\0")
+   ts = Time.xmlschema(tstr)
+   files.each do |f|
+     changes[f] ||= ts
+   end
+end
+
+prepat = /^entries#{File::SEPARATOR}/
+puts JSON.pretty_generate(
+  changes.map do |x,t|
+    {
+      op: File.exist?(x) ? :update : :delete,
+      path: x.sub(prepat,'').split(File::SEPARATOR),
+      time: t.xmlschema,
+    }
+  end.sort_by { _1.fetch(:time) },
+)
 ```
