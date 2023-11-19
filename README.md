@@ -1,4 +1,6 @@
-# Kozeki: Convert markdown files to rendered JSON files with index for static website blogging
+# Kozeki: Markdown to JSON renderer for blogging with static site generator
+
+Backend renderer used at https://diary.sorah.jp/ and https://blog.sorah.jp/
 
 1. Collect markdown files with front matter (for metadata)
 2. Decorate metadata using Ruby scripts
@@ -27,19 +29,26 @@ gem 'kozeki'
 bundle install
 ```
 
-## Configuration
+## Example Workflow
+
+### Configuration
 
 ```ruby
 # config.rb
 source_directory './articles'
 destination_directory './build'
-cache_directory './cache'
+cache_directory './cache' # to store incremental build state and cache
 
-collection_list_included_prefix('archive:', 'category:')
+# Ensure timestamp for all items
+metadata_decorator do |meta, source|
+  meta[:timestamp] ||= meta[:published_at]
+  meta[:timestamp] ||= meta[:created_at]
+  meta[:timestamp] ||= source.mtime
+end
 
+# Include published items to collections
 metadata_decorator do |meta|
   next unless meta[:published_at]
-  meta[:timestamp] = Time.iso8601(meta[:published_at])
 
   meta[:collections] ||= []
   meta[:collections].push('index')
@@ -47,25 +56,17 @@ metadata_decorator do |meta|
   meta[:collections].concat (meta[:categories] || []).map { "category:#{_1}" }
 end
 
-metadata_decorator do |meta|
-  next if meta[:published_at]
-  meta[:collections] ||= []
-  meta[:collections].push('draft')
-end
-
-metadata_decorator do |meta, source|
-  meta[:updated_at] = File.mtime(source.path)
-end
-
-require 'base64'
+# Generate permalink and make a index as a collection
 metadata_decorator do |meta|
   meta[:permalink] = "#{meta.fetch(:timestamp).strftime('%Y/%m/%d')}/#{meta.fetch(:slug)}"
   meta[:collections] ||= []
-  meta[:collections].push "permalink:#{Base64.urlsafe_encode64(meta[:permalink])}"
+  meta[:collections].push "permalink:#{meta[:permalink].tr('/','!')}"
 end
 ```
 
-## Run
+Advanced configuration example available at [./ADVANCED.md](./ADVANCED.md)
+
+### Prepare input
 
 Example input at `./articles/2023/foo.md`:
 
@@ -82,15 +83,25 @@ slug: foo-bar
 blah blah
 ```
 
+
+### Run Build
+
+```
+bundle exec kozeki build ./config.rb
+```
+
+### Confirm output
+
+
 Example output:
 
 ```jsonc
-// out/items/ca1c4d8da0e7823fa8b31fb4f15a727d9a11c57ca0736b7c6a40bd3906ca85f1.json
+// out/items/ao_ca1c4d8da0e7823fa8b31fb4f15a727d9a11c57ca0736b7c6a40bd3906ca85f1.json
 {
   "kind": "item",
-  "path": "items/ca1c4d8da0e7823fa8b31fb4f15a727d9a11c57ca0736b7c6a40bd3906ca85f1.json",
+  "id": "ao_ca1c4d8da0e7823fa8b31fb4f15a727d9a11c57ca0736b7c6a40bd3906ca85f1"
   "meta": {
-    "id": "ca1c4d8da0e7823fa8b31fb4f15a727d9a11c57ca0736b7c6a40bd3906ca85f1",
+    "id": "ao_ca1c4d8da0e7823fa8b31fb4f15a727d9a11c57ca0736b7c6a40bd3906ca85f1",
     "title": "foo bar",
     "collections": ["archive:2023:08", "category:diary"],
     "timestamp": "2023-08-06T17:50:00+09:00",
@@ -112,7 +123,7 @@ Example output:
   "name": "archive:2023:08",
   "items": [
     {
-      "path": "items/ca1c4d8da0e7823fa8b31fb4f15a727d9a11c57ca0736b7c6a40bd3906ca85f1.json",
+      "path": "items/ao_ca1c4d8da0e7823fa8b31fb4f15a727d9a11c57ca0736b7c6a40bd3906ca85f1.json",
       "meta": {
         "id": "ca1c4d8da0e7823fa8b31fb4f15a727d9a11c57ca0736b7c6a40bd3906ca85f1",
         "title": "foo bar",
@@ -126,17 +137,22 @@ Example output:
 }
 ```
 
-## Usage
-
+```jsonc
+// out/collections.json
+{
+  "kind": "collection_list",
+  "collections": [
+    {"id": "archive:2023:08", "path": "collections/archive:2023:08.json"},
+    {"id": "category:diary", "path": "collections/category:diary.json"}
+  ]
+}
 ```
-bundle exec kozeki build ./config.rb
-```
 
-### Known metadata keys
+## Known metadata keys
 
 - `id` (string): Static identifier for a single markdown file. Used for final JSON file output. Default to file path.
 - `collections` (string[]): Specify index files to include a file
-- `timestamp` (Time or RFC3339 String): Timestamp for file
+- `timestamp` (Time or RFC3339 String): Timestamp for file. Used for descending sort of list of items in collection.
 
 ## License
 
